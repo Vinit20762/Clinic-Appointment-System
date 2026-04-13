@@ -1,0 +1,30 @@
+-- =============================================================
+-- Seed data for development & testing
+-- Passwords are bcrypt hashes of "Password@123"
+-- =============================================================
+
+USE clinic_db;
+
+-- Admin user
+INSERT INTO users (name, email, password, role) VALUES
+  ('Super Admin', 'admin@clinic.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+
+-- Doctor users
+INSERT INTO users (name, email, password, role) VALUES
+  ('Dr. Sarah Johnson',  'sarah@clinic.com',  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'doctor'),
+  ('Dr. Michael Chen',   'michael@clinic.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'doctor');
+
+-- Patient users
+INSERT INTO users (name, email, password, role) VALUES
+  ('Alice Smith', 'alice@example.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'patient'),
+  ('Bob Wilson',  'bob@example.com',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'patient');
+
+-- Doctor profiles (user_id matches the INSERT order above: 2, 3)
+INSERT INTO doctors (user_id, specialization) VALUES
+  (2, 'Cardiologist'),
+  (3, 'General Physician');
+
+-- Patient profiles (user_id 4, 5)
+INSERT INTO patients (user_id, age, gender, phone) VALUES
+  (4, 30, 'female', '9876543210'),
+  (5, 25, 'male',   '9123456789');
