@@ -34,18 +34,28 @@ const Overview = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Total',     value: stats.total,     color: 'bg-blue-50   text-blue-700',    icon: '📋' },
-          { label: 'Upcoming',  value: stats.active,    color: 'bg-emerald-50 text-emerald-700', icon: '📅' },
-          { label: 'Completed', value: stats.done,      color: 'bg-purple-50 text-purple-700',  icon: '✅' },
-          { label: 'Cancelled', value: stats.cancelled, color: 'bg-red-50    text-red-700',     icon: '❌' },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} className={`card text-center ${color}`}>
-            <div className="text-2xl mb-1">{icon}</div>
-            <div className="text-3xl font-bold">{value}</div>
-            <div className="text-sm font-medium mt-1">{label}</div>
-          </div>
-        ))}
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card text-center animate-pulse">
+              <div className="w-8 h-8 bg-gray-200 rounded-full mx-auto mb-2" />
+              <div className="w-12 h-8 bg-gray-200 rounded mx-auto mb-2" />
+              <div className="w-16 h-4 bg-gray-200 rounded mx-auto" />
+            </div>
+          ))
+        ) : (
+          [
+            { label: 'Total Appointments',     value: stats.total,     color: 'bg-blue-50   text-blue-700',    icon: '📋' },
+            { label: 'Upcoming Appointments',  value: stats.active,    color: 'bg-emerald-50 text-emerald-700', icon: '📅' },
+            { label: 'Completed Appointments', value: stats.done,      color: 'bg-purple-50 text-purple-700',  icon: '✅' },
+            { label: 'Cancelled Appointments', value: stats.cancelled, color: 'bg-red-50    text-red-700',     icon: '❌' },
+          ].map(({ label, value, color, icon }) => (
+            <div key={label} className={`card text-center ${color}`}>
+              <div className="text-2xl mb-1">{icon}</div>
+              <div className="text-3xl font-bold">{value}</div>
+              <div className="text-sm font-medium mt-1">{label}</div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Recent appointments */}

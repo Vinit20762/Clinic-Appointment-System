@@ -44,7 +44,7 @@ const Overview = () => {
 
       {/* Today's patient list */}
       <div className="card">
-        <h3 className="font-semibold text-gray-800 mb-4">Today's Patients — {today}</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">Today's Patients: {today}</h3>
         {loading ? <LoadingSpinner /> : appointments.length === 0 ? (
           <p className="text-gray-400 text-sm py-4 text-center">No appointments today.</p>
         ) : (
