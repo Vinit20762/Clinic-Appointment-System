@@ -254,13 +254,134 @@ const BookAppointment = () => {
 };
 
 // ----------------------------------------------------------------
+// Reschedule Modal
+// ----------------------------------------------------------------
+const RescheduleModal = ({ appointment, onClose, onSuccess }) => {
+  const [avail,          setAvail]          = useState([]);
+  const [form,           setForm]           = useState({ date: '', time: '' });
+  const [fetchingAvail,  setFetchingAvail]  = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState('');
+
+  useEffect(() => {
+    if (form.date) {
+      setFetchingAvail(true);
+      patientAPI.getDoctorAvailability(appointment.doctor_id, form.date)
+        .then(({ data }) => setAvail(data.availability))
+        .catch(() => setAvail([]))
+        .finally(() => setFetchingAvail(false));
+    } else {
+      setAvail([]);
+    }
+  }, [form.date, appointment.doctor_id]);
+
+  const getTimeSlots = () => {
+    if (!avail.length) return [];
+    const [slot] = avail;
+    const slots = [];
+    let [h, m] = slot.start_time.split(':').map(Number);
+    const [eh, em] = slot.end_time.split(':').map(Number);
+    while (h < eh || (h === eh && m < em)) {
+      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      m += 30;
+      if (m >= 60) { h += 1; m -= 60; }
+    }
+    return slots;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.date || !form.time) { setError('Please select a date and time.'); return; }
+    setLoading(true);
+    try {
+      await appointmentAPI.reschedule(appointment.id, { date: form.date, time: form.time });
+      onSuccess('Appointment rescheduled successfully.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Reschedule failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800 text-lg">Reschedule Appointment</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Currently: <span className="font-medium text-gray-700">Dr. {appointment.doctor_name}</span> on {appointment.date} at {appointment.time}
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="form-label">New Date *</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => { setForm({ date: e.target.value, time: '' }); setError(''); }}
+              min={new Date().toISOString().split('T')[0]}
+              className="form-input"
+              required
+            />
+          </div>
+
+          {fetchingAvail && <LoadingSpinner size="sm" text="Checking availability…" />}
+
+          {form.date && !fetchingAvail && (
+            avail.length === 0 ? (
+              <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                Doctor is not available on this date.
+              </p>
+            ) : (
+              <div>
+                <label className="form-label">New Time *</label>
+                <select
+                  value={form.time}
+                  onChange={(e) => setForm((p) => ({ ...p, time: e.target.value }))}
+                  className="form-input"
+                  required
+                >
+                  <option value="">— Select time —</option>
+                  {getTimeSlots().map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Available: {avail[0].start_time} – {avail[0].end_time}</p>
+              </div>
+            )
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !form.date || !form.time}
+              className="flex-1 btn-primary text-sm py-2"
+            >
+              {loading ? 'Saving…' : 'Confirm Reschedule'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------
 // My Appointments
 // ----------------------------------------------------------------
 const MyAppointments = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [cancelling,   setCancelling]   = useState(null);
-  const [message,      setMessage]      = useState('');
+  const [appointments,    setAppointments]    = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [cancelling,      setCancelling]      = useState(null);
+  const [rescheduling,    setRescheduling]    = useState(null);
+  const [message,         setMessage]         = useState('');
 
   const load = () => {
     setLoading(true);
@@ -286,8 +407,22 @@ const MyAppointments = () => {
     }
   };
 
+  const handleRescheduleSuccess = (msg) => {
+    setRescheduling(null);
+    setMessage(msg);
+    load();
+  };
+
   return (
     <div>
+      {rescheduling && (
+        <RescheduleModal
+          appointment={rescheduling}
+          onClose={() => setRescheduling(null)}
+          onSuccess={handleRescheduleSuccess}
+        />
+      )}
+
       {message && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
           {message}
@@ -312,7 +447,7 @@ const MyAppointments = () => {
                 </div>
                 <p className="text-sm text-gray-500">{a.specialization}</p>
                 <p className="text-sm text-gray-600 mt-1">
-                  📅 {a.date} &nbsp;⏰ {a.time} &nbsp;🔢 Token #{a.token_number}
+                  {a.date} &nbsp;·&nbsp; {a.time} &nbsp;·&nbsp; Token #{a.token_number}
                 </p>
                 {a.current_token > 0 && a.status === 'booked' && (
                   <p className="text-xs text-emerald-600 mt-1">
@@ -325,13 +460,21 @@ const MyAppointments = () => {
               </div>
 
               {(a.status === 'booked' || a.status === 'rescheduled') && (
-                <button
-                  onClick={() => handleCancel(a.id)}
-                  disabled={cancelling === a.id}
-                  className="btn-danger self-start sm:self-center text-sm py-1.5 px-3"
-                >
-                  {cancelling === a.id ? '…' : 'Cancel'}
-                </button>
+                <div className="flex gap-2 self-start sm:self-center">
+                  <button
+                    onClick={() => setRescheduling(a)}
+                    className="text-sm py-1.5 px-3 rounded-lg border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors"
+                  >
+                    Reschedule
+                  </button>
+                  <button
+                    onClick={() => handleCancel(a.id)}
+                    disabled={cancelling === a.id}
+                    className="btn-danger text-sm py-1.5 px-3"
+                  >
+                    {cancelling === a.id ? '…' : 'Cancel'}
+                  </button>
+                </div>
               )}
             </div>
           ))}

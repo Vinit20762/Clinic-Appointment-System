@@ -2,6 +2,22 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const Field = ({ name, label, type = 'text', placeholder, required, value, onChange, error }) => (
+  <div>
+    <label className="form-label">{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      className={`form-input ${error ? 'border-red-400' : ''}`}
+    />
+    {error && <p className="form-error">{error}</p>}
+  </div>
+);
+
 const Register = () => {
   const { register } = useAuth();
   const navigate     = useNavigate();
@@ -56,22 +72,6 @@ const Register = () => {
     }
   };
 
-  const Field = ({ name, label, type = 'text', placeholder, required }) => (
-    <div>
-      <label className="form-label">{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={form[name]}
-        onChange={handleChange}
-        placeholder={placeholder}
-        required={required}
-        className={`form-input ${errors[name] ? 'border-red-400' : ''}`}
-      />
-      {errors[name] && <p className="form-error">{errors[name]}</p>}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-lg">
@@ -92,17 +92,17 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field name="name"  label="Full Name"   placeholder="Alice Smith" required />
-              <Field name="email" label="Email"       type="email" placeholder="alice@example.com" required />
+              <Field name="name"  label="Full Name"   placeholder="Alice Smith"          required value={form.name}     onChange={handleChange} error={errors.name} />
+              <Field name="email" label="Email"       type="email" placeholder="alice@example.com" required value={form.email}    onChange={handleChange} error={errors.email} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field name="password" label="Password"         type="password" placeholder="Min 8 chars" required />
-              <Field name="confirm"  label="Confirm Password" type="password" placeholder="Re-enter"    required />
+              <Field name="password" label="Password"         type="password" placeholder="Min 8 chars" required value={form.password} onChange={handleChange} error={errors.password} />
+              <Field name="confirm"  label="Confirm Password" type="password" placeholder="Re-enter"    required value={form.confirm}  onChange={handleChange} error={errors.confirm} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Field name="age"   label="Age"   type="number" placeholder="30" />
+              <Field name="age"   label="Age"   type="number" placeholder="30"          value={form.age}   onChange={handleChange} error={errors.age} />
               <div>
                 <label className="form-label">Gender</label>
                 <select
@@ -117,7 +117,7 @@ const Register = () => {
                   <option value="other">Other</option>
                 </select>
               </div>
-              <Field name="phone" label="Phone" placeholder="9876543210" />
+              <Field name="phone" label="Phone" placeholder="9876543210"                value={form.phone} onChange={handleChange} error={errors.phone} />
             </div>
 
             <button type="submit" disabled={loading} className="btn-secondary w-full mt-2">
